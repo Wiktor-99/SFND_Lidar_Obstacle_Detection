@@ -148,12 +148,11 @@ int main (int argc, char** argv)
 
     pcl::visualization::PCLVisualizer::Ptr viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
     ProcessPointClouds<pcl::PointXYZI> pointProcessorI;
-    std::vector<std::filesystem::path> stream = pointProcessorI.streamPcd("src/sensors/data/pcd/data_2");
+    std::vector<std::filesystem::path> stream = pointProcessorI.streamPcd("src/sensors/data/pcd/data_1");
     auto streamIterator = stream.begin();
     pcl::PointCloud<pcl::PointXYZI>::Ptr inputCloudI;
     CameraAngle setAngle = XY;
     initCamera(setAngle, viewer);
-    cityBlock(viewer);
 
     while (!viewer->wasStopped ())
     {
@@ -164,9 +163,9 @@ int main (int argc, char** argv)
         cityBlock(viewer, pointProcessorI, inputCloudI);
 
         streamIterator++;
-        if(streamIterator == stream.end())
+        if(streamIterator == stream.end()) {
             streamIterator = stream.begin();
-
+        }
         viewer->spinOnce ();
     }
 }

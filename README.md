@@ -39,22 +39,22 @@ The workspace provided in the SFND classroom comes preinstallated with everythin
 
    ```cmake
    cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-   
+
    add_definitions(-std=c++14)
-   
+
    set(CXX_FLAGS "-Wall")
    set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
-   
+
    project(playback)
-   
+
    find_package(PCL 1.11 REQUIRED)
-   
+
    include_directories(${PCL_INCLUDE_DIRS})
    link_directories(${PCL_LIBRARY_DIRS})
    add_definitions(${PCL_DEFINITIONS})
    list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
-   
-   
+
+
    add_executable (environment src/environment.cpp src/render/render.cpp src/processPointClouds.cpp)
    target_link_libraries (environment ${PCL_LIBRARIES})
    ```
@@ -71,7 +71,7 @@ The workspace provided in the SFND classroom comes preinstallated with everythin
    ```
 
    This should install the latest version of PCL. You should be able to do all the classroom exercises and project with this setup.
-   
+
 **Note** The library version of PCL being distributed by the apt repository for 18.04 and 20.04 are both older than v1.11. The following links have the information regarding the versions-
 
 [Bionic 18.04](https://www.ubuntuupdates.org/package/core/bionic/universe/updates/libpcl-dev)
@@ -83,11 +83,11 @@ You can either build PCL from source (for v1.11) or use the older version.
 
 #### Install via Homebrew
 1. install [homebrew](https://brew.sh/)
-2. update homebrew 
+2. update homebrew
 	```bash
 	$> brew update
 	```
-3. add  homebrew science [tap](https://docs.brew.sh/Taps) 
+3. add  homebrew science [tap](https://docs.brew.sh/Taps)
 	```bash
 	$> brew tap brewsci/science
 	```
@@ -95,7 +95,7 @@ You can either build PCL from source (for v1.11) or use the older version.
 	```bash
 	$> brew options pcl
 	```
-5. install PCL 
+5. install PCL
 	```bash
 	$> brew install pcl
 	```

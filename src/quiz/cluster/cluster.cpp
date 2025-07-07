@@ -6,6 +6,7 @@
 #include <chrono>
 #include <string>
 #include "kdtree.h"
+#include "clustering.h"
 
 // Arguments:
 // window is the region to draw box around
@@ -75,34 +76,6 @@ void render2DTree(Node* node, pcl::visualization::PCLVisualizer::Ptr& viewer, Bo
 
 }
 
-std::vector<std::vector<int>> euclideanCluster(const std::vector<std::vector<float>>& points, KdTree* tree, float distanceTol)
-{
-	std::vector<std::vector<int>> clusters;
-	std::vector<bool> processed(points.size(), false);
-
-	for (int i{0}; i < points.size(); ++i) {
-		if (processed[i]) {
-			continue;
-		}
-
-		std::vector<int> cluster;
-		processed[i] = true;
-		cluster.push_back(i);
-		const auto result = tree->search(points[i], distanceTol);
-
-		for (const auto point : result) {
-			if (not processed[point]) {
-				processed[point] = true;
-				cluster.push_back(point);
-			}
-		}
-
-		clusters.push_back(cluster);
-	}
-
-	return clusters;
-
-}
 
 int main ()
 {

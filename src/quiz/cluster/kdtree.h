@@ -1,3 +1,5 @@
+#pragma once
+
 /* \author Aaron Brown */
 // Quiz on implementing kd tree
 
@@ -42,27 +44,12 @@ struct KdTree
 			return;
 		}
 
-		if (depth % 3 == 0) {
-			if (point[0] < current->point[0]) {
-				insert(current->left, depth +1, point, id);
-			} else {
-				insert(current->right, depth +1, point, id);
-			}
-
-		} else if (depth % 3 == 1) {
-			if (point[1] < current->point[1]) {
-				insert(current->left, depth +1, point, id);
-			} else {
-				insert(current->right, depth +1, point, id);
-			}
+		const int idx = depth % 3;
+		if (point[idx] < current->point[idx]) {
+			insert(current->left, depth + 1, point, id);
 		} else {
-			if (point[2] < current->point[2]) {
-				insert(current->left, depth +1, point, id);
-			} else {
-				insert(current->right, depth +1, point, id);
-			}
+			insert(current->right, depth + 1, point, id);
 		}
-
 	}
 
 	void insert(std::vector<float> point, int id)
@@ -77,20 +64,22 @@ struct KdTree
 			return;
 		}
 
-		if (node->point[0] < target[0] + distanceTol &&  node->point[0] > target[0] - distanceTol &&
-			node->point[1] < target[1] + distanceTol &&  node->point[1] > target[1] - distanceTol &&
-			node->point[2] < target[2] + distanceTol &&  node->point[2] > target[2] - distanceTol) {
-			if ( std::sqrt(std::pow(node->point[0] - target[0] , 2) + std::pow(node->point[1] - target[1] , 2) + std::pow(node->point[2] - target[2] , 2)) < distanceTol) {
-				ids.push_back(node->id);
+		if (node->point.size() == 3 || target.size() == 3) {
+			if (node->point[0] <= (target[0] + distanceTol) && node->point[0] >= (target[0] - distanceTol) &&
+				node->point[1] <= (target[1] + distanceTol) && node->point[1] >= (target[1] - distanceTol) &&
+				node->point[2] <= (target[2] + distanceTol) && node->point[2] >= (target[2] - distanceTol)) {
+				if (std::sqrt(std::pow(node->point[0] - target[0], 2) + std::pow(node->point[1] - target[1], 2) + std::pow(node->point[2] - target[2], 2)) <= distanceTol) {
+					ids.push_back(node->id);
+				}
 			}
-
 		}
 
-		if (target[depth % 3] - distanceTol < node->point[depth % 3]) {
+		const int idx = depth % 3;
+		if (target[idx] - distanceTol < node->point[idx]) {
 			search(node->left, depth + 1, target, distanceTol, ids);
 		}
 
-		if (target[depth % 3] + distanceTol > node->point[depth % 3] ) {
+		if (target[idx] + distanceTol > node->point[idx] ) {
 			search(node->right, depth + 1, target, distanceTol, ids);
 		}
 	}
@@ -105,7 +94,4 @@ struct KdTree
 
 
 };
-
-
-
 

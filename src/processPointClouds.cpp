@@ -1,7 +1,8 @@
 // PCL lib Functions for processing point clouds
-
 #include "processPointClouds.h"
-
+#include "quiz/ransac/ransac.hpp"
+#include "quiz/cluster/kdtree.h"
+#include "quiz/cluster/clustering.h"
 
 //constructor:
 template<typename PointT>
@@ -97,31 +98,31 @@ std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT
 {
     // Time segmentation process
     auto startTime = std::chrono::steady_clock::now();
-    pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
-    pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
-    // Create the segmentation object
-    pcl::SACSegmentation<PointT> seg;
-    // Optional
-    seg.setOptimizeCoefficients (true);
-    // Mandatory
-    seg.setModelType (pcl::SACMODEL_PLANE);
-    seg.setMethodType (pcl::SAC_RANSAC);
-    seg.setMaxIterations (maxIterations);
-    seg.setDistanceThreshold (distanceThreshold);
+    auto inliers = Ransac<PointT>(cloud, maxIterations, distanceThreshold);
 
-    seg.setInputCloud (cloud);
-    seg.segment (*inliers, *coefficients);
-    if (inliers->indices.size () == 0)
+	typename pcl::PointCloud<PointT>::Ptr plane(new pcl::PointCloud<PointT>());
+	typename pcl::PointCloud<PointT>::Ptr obstacles(new pcl::PointCloud<PointT>());
+
+	for(int index = 0; index < cloud->points.size(); index++)
+	{
+		auto point = cloud->points[index];
+		if(inliers.count(index)) {
+			plane->points.push_back(point);
+        }
+		else {
+			obstacles->points.push_back(point);
+        }
+	}
+
+    if (inliers.size () == 0)
     {
-            std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
+        std::cerr << "Could not estimate a planar model for the given dataset." << std::endl;
 
     }
     auto endTime = std::chrono::steady_clock::now();
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
     std::cout << "plane segmentation took " << elapsedTime.count() << " milliseconds" << std::endl;
-
-    std::pair<typename pcl::PointCloud<PointT>::Ptr, typename pcl::PointCloud<PointT>::Ptr> segResult = SeparateClouds(inliers, cloud);
-    return segResult;
+    return std::make_pair(obstacles, plane);
 }
 
 
@@ -133,30 +134,29 @@ std::vector<typename pcl::PointCloud<PointT>::Ptr> ProcessPointClouds<PointT>::C
     auto startTime = std::chrono::steady_clock::now();
 
     std::vector<typename pcl::PointCloud<PointT>::Ptr> clusters;
+    KdTree tree;
 
-    typename pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT>);
-    tree->setInputCloud (cloud);
+    std::vector<std::vector<float>> points;
+    for (int i = 0; i < cloud->points.size(); ++i) {
+        std::vector<float> point = {cloud->points[i].x, cloud->points[i].y, cloud->points[i].z};
+        points.push_back(point);
+        tree.insert(points[i], i);
+    }
 
-    std::vector<pcl::PointIndices> cluster_indices;
-    pcl::EuclideanClusterExtraction<PointT> ec;
-    ec.setClusterTolerance (clusterTolerance);
-    ec.setMinClusterSize (minSize);
-    ec.setMaxClusterSize (maxSize);
-    ec.setSearchMethod (tree);
-    ec.setInputCloud (cloud);
-    ec.extract (cluster_indices);
-
+    auto cluster_indices = euclideanCluster(points, &tree, clusterTolerance);
     for (const auto& cluster : cluster_indices)
     {
-        typename pcl::PointCloud<PointT>::Ptr cloud_cluster (new pcl::PointCloud<PointT>);
-        for (const auto& idx : cluster.indices) {
-            cloud_cluster->push_back((*cloud)[idx]);
-        } //*
-        cloud_cluster->width = cloud_cluster->size();
-        cloud_cluster->height = 1;
-        cloud_cluster->is_dense = true;
+        if (cluster.size() <= maxSize && cluster.size() >= minSize) {
+            typename pcl::PointCloud<PointT>::Ptr cloud_cluster (new pcl::PointCloud<PointT>);
+            for (const auto& idx : cluster) {
+                cloud_cluster->push_back((*cloud)[idx]);
+            }
+            cloud_cluster->width = cloud_cluster->size();
+            cloud_cluster->height = 1;
+            cloud_cluster->is_dense = true;
 
-        clusters.push_back(cloud_cluster);
+            clusters.push_back(cloud_cluster);
+        }
     }
 
     auto endTime = std::chrono::steady_clock::now();
@@ -216,7 +216,6 @@ std::vector<std::filesystem::path> ProcessPointClouds<PointT>::streamPcd(std::st
 
     std::vector<std::filesystem::path> paths(std::filesystem::directory_iterator{dataPath}, std::filesystem::directory_iterator{});
 
-    // sort files in accending order so playback is chronological
     sort(paths.begin(), paths.end());
 
     return paths;
